@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="Free signalized intersection LOS calculator. Analyze single lane groups or whole intersections. Compute control delay, v/c ratio, and LOS using HCM-inspired methods. No login required." />
+  <meta name="description" content="Free signalized intersection LOS calculator. Analyze single lane groups or whole intersections. Compute control delay, v/c ratio, and LOS using HCM-inspired methods. No login required." />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Signalized Intersection LOS Calculator | Lane Group & Control Delay</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <div class="brand">
+      <div class="logo">LOS</div>
+      <div>
+        <h1>Signalized Intersection LOS Calculator</h1>
+        <p class="sub">Educational, HCM-inspired estimates for lane groups and intersection average delay.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+<section class="card">
+      <div class="row between">
+        <h2>Add Lane Group</h2>
+        <button class="btn" id="addExample">Fill Example</button>
+      </div>
+
+      <div class="grid grid-4">
+        <label class="field">
+          <span>Label</span>
+          <input id="label" type="text" placeholder="e.g., EB Thru" value="" />
+        </label>
+
+        <label class="field">
+          <span>Volume, v (veh/hr)</span>
+          <input id="v" type="number" min="0" step="1" value="450" />
+        </label>
+
+        <label class="field">
+          <span>Lanes, N</span>
+          <input id="lanes" type="number" min="1" step="1" value="1" />
+        </label>
+
+        <label class="field">
+          <span>Effective green, g (sec)</span>
+          <input id="g" type="number" min="1" step="0.5" value="30" />
+        </label>
+      </div>
+
+      <details class="advanced" id="advancedLaneGroup">
+        <summary>Advanced inputs (optional)</summary>
+        <div class="grid grid-4">
+          <label class="field">
+            <span>PHF</span>
+            <input id="phf" type="number" min="0.50" max="1.00" step="0.01" value="1.00" />
+          </label>
+
+          <label class="field">
+            <span>Base sat. flow, s₀ (veh/hr/ln)</span>
+            <input id="s0" type="number" min="1000" step="10" value="1900" />
+          </label>
+
+          <label class="field">
+            <span>Heavy vehicles, HV% </span>
+            <input id="hvPct" type="number" min="0" max="50" step="0.5" value="0" />
+          </label>
+
+          <label class="field">
+            <span>HV equivalency, E<sub>T</sub></span>
+            <input id="ET" type="number" min="1.0" step="0.1" value="2.0" />
+          </label>
+
+          <label class="field">
+            <span>Lane width (ft)</span>
+            <select id="laneWidth">
+              <option value="12" selected>12+ ft</option>
+              <option value="11">11 ft</option>
+              <option value="10">10 ft</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Lost time, L (sec)</span>
+            <input id="L" type="number" min="0" step="0.5" value="0" />
+          </label>
+
+          <label class="field">
+            <span>Arrival type (1–6)</span>
+            <select id="arrivalType">
+              <option value="1">1 (very poor)</option>
+              <option value="2">2 (unfavorable)</option>
+              <option value="3" selected>3 (random)</option>
+              <option value="4">4 (favorable)</option>
+              <option value="5">5 (highly favorable)</option>
+              <option value="6">6 (excellent)</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Scenario multiplier</span>
+            <input id="mult" type="number" min="0.1" step="0.05" value="1.00" />
+          </label>
+        </div>
+
+        <p class="note">
+          Notes: HV% reduces saturation flow using a simple heavy-vehicle factor;
+          lane width applies a small saturation adjustment; arrival type scales delay.
+        </p>
+      </details>
+
+      <div class="row gap">
+        <button class="btn primary" id="addLaneGroup">Add to Intersection</button>
+        <button class="btn ghost" id="clearForm">Clear</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Intersection Settings</h2>
+      <div class="grid grid-3">
+        <label class="field">
+          <span>Cycle length, C (sec)</span>
+          <input id="C" type="number" min="30" step="1" value="120" />
+        </label>
+
+        <label class="field">
+          <span>Analysis period, T (hr)</span>
+          <input id="T" type="number" min="0.25" step="0.25" value="1" />
+        </label>
+
+        <label class="field">
+          <span>Startup/adjust factor, k</span>
+          <input id="k" type="number" min="0" step="0.1" value="0.5" />
+        </label>
+      </div>
+
+      <details class="advanced" id="advancedIntersection">
+        <summary>Advanced (optional)</summary>
+        <div class="grid grid-3">
+          <label class="field">
+            <span>Default base sat. flow, s₀ (veh/hr/ln)</span>
+            <input id="s0_default" type="number" min="1000" step="10" value="1900" />
+          </label>
+
+          <label class="field">
+            <span>Default PHF</span>
+            <input id="phf_default" type="number" min="0.50" max="1.00" step="0.01" value="1.00" />
+          </label>
+
+          <label class="field">
+            <span>Default lost time, L (sec per lane group)</span>
+            <input id="L_default" type="number" min="0" step="0.5" value="0" />
+          </label>
+        </div>
+        <p class="note">
+          Defaults are applied when you add a new lane group. You can override per lane group below.
+        </p>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="row between">
+        <h2>Lane Groups</h2>
+        <div class="row gap">
+          <button class="btn" id="exportCsv">Export CSV</button>
+          <button class="btn danger" id="clearAll">Clear All</button>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table id="laneTable">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>v (veh/hr)</th>
+              <th>g (s)</th>
+              <th>s<sub>eff</sub> (veh/hr)</th>
+              <th>c (veh/hr)</th>
+              <th>v/c</th>
+              <th>Delay (s/veh)</th>
+              <th>LOS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="summary">
+        <div class="stat">
+          <div class="k">Intersection avg delay</div>
+          <div class="v" id="dInt">—</div>
+        </div>
+        <div class="stat">
+          <div class="k">Intersection LOS</div>
+          <div class="v" id="losInt">—</div>
+        </div>
+        <div class="stat">
+          <div class="k">Total volume</div>
+          <div class="v" id="vTot">—</div>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        <strong>Disclaimer:</strong> This tool provides <em>educational</em>, simplified, HCM-inspired estimates.
+        It is not a replacement for official HCM software or professional engineering judgment.
+      </p>
+    </section>
+
+<section class="card">
+      <h2>How the math is done (high level)</h2>
+      <ul class="bullets">
+        <li><strong>Capacity:</strong> c = s<sub>eff</sub> · (g<sub>eff</sub>/C), where s<sub>eff</sub> starts from a base saturation flow and applies simple adjustments (HV%, lane width), then multiplies by lanes.</li>
+        <li><strong>v/c:</strong> X = v<sub>adj</sub>/c, where v<sub>adj</sub> = (v · multiplier)/PHF.</li>
+        <li><strong>Delay:</strong> uniform delay from a Webster-style form + a simplified overflow component; arrival type scales delay.</li>
+        <li><strong>Intersection delay:</strong> weighted average: d<sub>int</sub> = Σ(v · d)/Σv.</li>
+        <li><strong>LOS:</strong> based on signalized thresholds (A ≤ 10, B ≤ 20, C ≤ 35, D ≤ 55, E ≤ 80, F &gt; 80 sec/veh).</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>What is Level of Service (LOS)?</h2>
+      <p>
+        Level of Service (LOS) is a qualitative measure used in traffic engineering to describe
+        operational conditions at a signalized intersection. For signalized intersections, LOS
+        is based on <strong>average control delay per vehicle</strong> and is graded from
+        LOS A (very low delay) to LOS F (excessive delay).
+      </p>
+      <p>
+        This calculator allows you to first analyze a <strong>single lane group</strong>
+        (such as an eastbound through movement), then combine multiple lane groups to compute
+        an <strong>intersection-wide LOS</strong> using a weighted average delay approach.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>How This LOS Calculator Is Typically Used</h2>
+      <ul class="bullets">
+        <li><strong>Homework & exams:</strong> Analyze one lane group at a time to understand delay and v/c.</li>
+        <li><strong>Intersection analysis:</strong> Add all approaches and movements to compute overall LOS.</li>
+        <li><strong>What-if scenarios:</strong> Adjust green time, volumes, or heavy vehicles to see impacts.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Frequently Asked Questions</h2>
+      <p><strong>Is this an official HCM calculator?</strong><br>
+      No. This tool provides educational, HCM-inspired estimates and is not a substitute for
+      official HCM software or professional engineering judgment.</p>
+
+      <p><strong>How is intersection LOS calculated?</strong><br>
+      Intersection LOS is computed using a weighted average of lane-group delays,
+      where each delay is weighted by its traffic volume.</p>
+
+      <p><strong>What delay corresponds to each LOS?</strong><br>
+      A ≤ 10 s/veh, B ≤ 20, C ≤ 35, D ≤ 55, E ≤ 80, F &gt; 80 s/veh.</p>
+    </section>
+
+  
+    <section class="card">
+      <h2>What is Level of Service (LOS)?</h2>
+      <p>
+        Level of Service (LOS) is a qualitative measure used in traffic engineering to describe
+        operational conditions at a signalized intersection. For signalized intersections, LOS
+        is based on <strong>average control delay per vehicle</strong> and is graded from
+        LOS A (very low delay) to LOS F (excessive delay).
+      </p>
+      <p>
+        This calculator allows you to first analyze a <strong>single lane group</strong>
+        (such as an eastbound through movement), then combine multiple lane groups to compute
+        an <strong>intersection-wide LOS</strong> using a weighted average delay approach.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>How This LOS Calculator Is Typically Used</h2>
+      <ul class="bullets">
+        <li><strong>Homework & exams:</strong> Analyze one lane group at a time to understand delay and v/c.</li>
+        <li><strong>Intersection analysis:</strong> Add all approaches and movements to compute overall LOS.</li>
+        <li><strong>What-if scenarios:</strong> Adjust green time, volumes, or heavy vehicles to see impacts.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Frequently Asked Questions</h2>
+      <p><strong>Is this an official HCM calculator?</strong><br>
+      No. This tool provides educational, HCM-inspired estimates and is not a substitute for
+      official HCM software or professional engineering judgment.</p>
+
+      <p><strong>How is intersection LOS calculated?</strong><br>
+      Intersection LOS is computed using a weighted average of lane-group delays,
+      where each delay is weighted by its traffic volume.</p>
+
+      <p><strong>What delay corresponds to each LOS?</strong><br>
+      A ≤ 10 s/veh, B ≤ 20, C ≤ 35, D ≤ 55, E ≤ 80, F &gt; 80 s/veh.</p>
+    </section>
+
+  </main>
+
+  <footer class="wrap foot">
+    <span>Built as a static site (no server needed). Open <code>index.html</code> locally or deploy free on Vercel/Netlify/GitHub Pages.</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
